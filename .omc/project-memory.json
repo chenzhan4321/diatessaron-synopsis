@@ -102,6 +102,12 @@
       "type": "file"
     },
     {
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1775798171051,
+      "type": "directory"
+    },
+    {
       "path": "web/js/app.js",
       "accessCount": 1,
       "lastAccessed": 1775797133794,
@@ -118,6 +124,12 @@
       "accessCount": 1,
       "lastAccessed": 1775797451068,
       "type": "file"
+    },
+    {
+      "path": "scripts/test_web.py",
+      "accessCount": 1,
+      "lastAccessed": 1775798265473,
+      "type": "directory"
     }
   ],
   "userDirectives": []

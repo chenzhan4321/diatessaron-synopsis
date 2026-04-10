@@ -4,12 +4,13 @@ Build unified JSON data files for the web visualization.
 Takes all corpora (Old Syriac, Peshitta, Greek NT, Hogg, Hill/Ciasca mappings,
 Arabic sections) and produces:
 
-  web/data/
+  docs/data/
     gospels.json         — unified index of 4 gospels with all versions per verse
     diatessaron.json     — 55 sections with Hogg English + Arabic + mappings
     corpus_stats.json    — overview statistics for landing page
 
-This is the static data layer consumed by the web app.
+This is the static data layer consumed by the web app
+(published via GitHub Pages from the /docs directory).
 """
 
 import csv
@@ -20,7 +21,7 @@ from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parent.parent
 DATA = PROJECT / "data"
-WEB_DATA = PROJECT / "web" / "data"
+WEB_DATA = PROJECT / "docs" / "data"
 WEB_DATA.mkdir(parents=True, exist_ok=True)
 
 # Canonical gospel book names (normalized)
