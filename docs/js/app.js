@@ -195,44 +195,129 @@ function diatessaronApp() {
       return ch.verses.find((v) => v.v === verse) || null;
     },
 
-    // Parse a Diatessaron-Arabic section's body text into per-verse chunks.
+    // Parse a Diatessaron-Arabic section into CANONICAL-verse keyed chunks.
     //
-    // The Arabic uses Eastern Arabic digits (١٢٣...) in parentheses to mark
-    // verse boundaries, e.g. "(١) وقال يسوع". Many sections start with
-    // un-numbered opening prose BEFORE the first marker — we capture that
-    // as `preText` so it can be attached to the earliest Hogg verses.
+    // Ciasca's Arabic text contains two kinds of in-line markers:
     //
-    // Returns an object with:
-    //   map:         Map from ASCII verse number ("1","2",...) → Arabic text
-    //   preText:     String of opening text before any marker (may be "")
-    //   firstMarker: Integer of first marker found (or null if none)
+    //   1. Source reference:   لوقا (١:٥)   = "Luke 1:5"
+    //      Identifies the canonical book+chapter+verse of the text that
+    //      follows (OR confirms position mid-section).
+    //
+    //   2. Numbered marker:    (٦)   = "verse 6 of the current source"
+    //      Sets/increments the verse number within the current source
+    //      (book+chapter stays the same as the last source reference).
+    //
+    // We walk the text left→right keeping a cursor {book, ch, v} and
+    // attach each text segment to its canonical position. Hogg's own
+    // gospel_refs field (e.g. "Luke i. 6") is then used to look up the
+    // matching Arabic segment — a true canonical-verse alignment.
+    //
+    // Returns:
+    //   canonMap  — Map "Luke 1:6" → Arabic text
+    //   preText   — any text before the first marker (rare; usually empty)
     parseArabicVerses(arabicText) {
-      const result = { map: new Map(), preText: "", firstMarker: null };
+      const result = { canonMap: new Map(), preText: "" };
       if (!arabicText) return result;
-      const EAST_TO_ASCII = {"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9"};
-      const markerRe = /[\(（]\s*([٠١٢٣٤٥٦٧٨٩]+)\s*[\)）]\.?/g;
-      const matches = [];
+
+      const EAST = "٠١٢٣٤٥٦٧٨٩";
+      const eastToAscii = (s) => {
+        let out = "";
+        for (const c of s) {
+          const i = EAST.indexOf(c);
+          out += i >= 0 ? "0123456789"[i] : c;
+        }
+        return out;
+      };
+
+      // Arabic book names → canonical English. Longest first so "لوقاس"
+      // matches before "لوقا", etc.
+      const BOOK_MAP = {
+        "لوقاس": "Luke", "لوقا": "Luke", "لو": "Luke",
+        "يوحنا": "John", "يو": "John",
+        "مرقس": "Mark", "مر": "Mark",
+        "متى": "Matthew", "متي": "Matthew", "مت": "Matthew",
+      };
+      const BOOK_ALT = Object.keys(BOOK_MAP).sort((a, b) => b.length - a.length);
+      const BOOK_RE = BOOK_ALT.join("|");
+
+      // Match either a source ref (book + (ch:v)) or a numbered marker ((v))
+      const markerRe = new RegExp(
+        `(?:(${BOOK_RE})\\s*[(（]\\s*([${EAST}]+)\\s*:\\s*([${EAST}]+)\\s*[)）])` +
+        `|` +
+        `(?:[(（]\\s*([${EAST}]+)\\s*[)）]\\.?)`,
+        "g"
+      );
+
+      const events = [];
       let m;
       while ((m = markerRe.exec(arabicText)) !== null) {
-        const eastDigits = m[1];
-        const ascii = eastDigits.split("").map((c) => EAST_TO_ASCII[c] || c).join("");
-        matches.push({ verseNum: ascii, start: m.index, end: m.index + m[0].length });
+        if (m[1]) {
+          events.push({
+            type: "source",
+            start: m.index,
+            end: m.index + m[0].length,
+            book: BOOK_MAP[m[1]],
+            ch: parseInt(eastToAscii(m[2])),
+            v: parseInt(eastToAscii(m[3])),
+          });
+        } else {
+          events.push({
+            type: "num",
+            start: m.index,
+            end: m.index + m[0].length,
+            num: parseInt(eastToAscii(m[4])),
+          });
+        }
       }
-      if (matches.length === 0) {
-        // No verse markers — everything is "pre-marker"
+
+      if (events.length === 0) {
         result.preText = arabicText.trim();
         return result;
       }
-      // Text before the first marker is un-numbered opening prose
-      result.preText = arabicText.slice(0, matches[0].start).trim();
-      result.firstMarker = parseInt(matches[0].verseNum);
 
-      for (let i = 0; i < matches.length; i++) {
-        const cur = matches[i];
-        const next = matches[i + 1];
-        const chunk = arabicText.slice(cur.end, next ? next.start : undefined).trim();
-        result.map.set(cur.verseNum, chunk);
+      result.preText = arabicText.slice(0, events[0].start).trim();
+
+      let curBook = null, curCh = null, curV = null;
+      // Normalize: strip punctuation & whitespace to make prefix checks
+      // robust against ※ and . at segment boundaries.
+      const normalize = (s) => s.replace(/[※.,،؛!?\s]+/g, "");
+      const addSegment = (text) => {
+        const t = text.trim();
+        if (!t || !curBook || !curCh || !curV) return;
+        const key = `${curBook} ${curCh}:${curV}`;
+        const existing = result.canonMap.get(key);
+        if (!existing) {
+          result.canonMap.set(key, t);
+          return;
+        }
+        const nt = normalize(t);
+        const ne = normalize(existing);
+        if (nt.startsWith(ne) || ne.startsWith(nt) || nt.includes(ne) || ne.includes(nt)) {
+          // Overlap — keep whichever raw form is longer
+          result.canonMap.set(key, t.length > existing.length ? t : existing);
+        } else {
+          // Genuinely distinct — concatenate
+          result.canonMap.set(key, existing + " " + t);
+        }
+      };
+
+      for (let i = 0; i < events.length; i++) {
+        const ev = events[i];
+        const next = events[i + 1];
+
+        if (ev.type === "source") {
+          curBook = ev.book;
+          curCh = ev.ch;
+          curV = ev.v;
+        } else {
+          // numbered marker — same book+chapter, verse = num
+          curV = ev.num;
+        }
+
+        const segment = arabicText.slice(ev.end, next ? next.start : arabicText.length);
+        addSegment(segment);
       }
+
       return result;
     },
 
@@ -254,68 +339,35 @@ function diatessaronApp() {
       if (!sec || !sec.hogg_verses || !this.gospels) return [];
       const arabic = this.parseArabicVerses(sec.arabic || "");
 
-      // Identify which Hogg verses come BEFORE the first Arabic marker.
-      // In Ciasca 1888 each section starts with un-numbered prose, then the
-      // first marker appears (often at (٦) for Section 1). Hogg numbers
-      // verses 1..N that together correspond to this opening chunk.
-      // We attach the entire pre-marker chunk to the FIRST such Hogg verse,
-      // and mark subsequent pre-marker Hogg verses with a reference so the
-      // user can see they share text.
-      const firstMarker = arabic.firstMarker;
-      let preTextAttached = false;
-
       const rows = [];
       for (const hv of sec.hogg_verses) {
-        const verseKey = (hv.v || "").trim(); // e.g. "1" or "2,3"
-        // Hogg verse keys can be "1", "2,3", "4-6" etc.
-        // Extract ALL numeric parts for Arabic lookup.
-        const verseNums = verseKey
-          .split(/[,\s]/)
-          .map((s) => s.trim())
-          .filter((s) => /^\d+/.test(s))
-          .flatMap((s) => {
-            // handle range "4-6" → [4, 5, 6]
-            const range = s.match(/^(\d+)\s*[-–]\s*(\d+)$/);
-            if (range) {
-              const a = parseInt(range[1]), b = parseInt(range[2]);
-              const out = [];
-              for (let k = a; k <= b; k++) out.push(String(k));
-              return out;
-            }
-            return [s.replace(/[^\d]/g, "")];
-          })
+        const verseKey = (hv.v || "").trim();
+
+        // Parse ALL of Hogg's gospel_refs (not just the first), so we can
+        // pull multiple Arabic canonical chunks when Hogg's sub-verse
+        // covers several canonical verses (e.g. refs = ["John i. 2",
+        // "John i. 3"] for Hogg verseKey "2,3").
+        const refs = (hv.refs || [])
+          .map((r) => this.parseGospelRef(r))
           .filter(Boolean);
+        const parsed = refs[0] || null;
 
-        // Determine if this Hogg verse is BEFORE the first Arabic marker.
-        // (i.e. its highest verse number is less than firstMarker)
-        const maxNum = verseNums.length ? Math.max(...verseNums.map((n) => parseInt(n))) : null;
-        const isPreMarker = firstMarker !== null && maxNum !== null && maxNum < firstMarker;
-
-        let arabicText = "";
-        if (isPreMarker) {
-          // All pre-marker Hogg verses share the opening chunk.
-          // Attach it to the first one and leave the rest empty (but
-          // show a note in the ref cell).
-          if (!preTextAttached) {
-            arabicText = arabic.preText;
-            preTextAttached = true;
-          } else {
-            arabicText = "";  // empty; user sees "—" and the note
-          }
-        } else {
-          // Try each verse number — concatenate if multiple exist.
-          const chunks = [];
-          for (const n of verseNums) {
-            const chunk = arabic.map.get(n);
-            if (chunk) chunks.push(chunk);
-          }
-          arabicText = chunks.join(" ");
+        // Look up Arabic by EACH canonical ref and concatenate.
+        const arabicChunks = [];
+        for (const r of refs) {
+          const key = `${r.book} ${r.ch}:${r.v}`;
+          const chunk = arabic.canonMap.get(key);
+          if (chunk) arabicChunks.push(chunk);
         }
+        // De-duplicate consecutive identical chunks (can happen if multiple
+        // refs land on the same Arabic canonical key).
+        const dedupChunks = [];
+        for (const c of arabicChunks) {
+          if (dedupChunks[dedupChunks.length - 1] !== c) dedupChunks.push(c);
+        }
+        const arabicText = dedupChunks.join(" ");
 
-        // Parse the first gospel ref to get canonical verse
-        const firstRef = (hv.refs && hv.refs[0]) || "";
-        const parsed = this.parseGospelRef(firstRef);
-
+        // Look up Greek / Peshitta / Old Syriac / KJV via the first ref.
         let greek = "", peshitta = "", cur = "", sin = "", kjv = "";
         if (parsed) {
           const gv = this.getGospelVerse(parsed.book, parsed.ch, parsed.v);
@@ -330,14 +382,14 @@ function diatessaronApp() {
 
         rows.push({
           dv: verseKey,
-          ref: firstRef,
+          ref: (hv.refs && hv.refs[0]) || "",
           parsedRef: parsed,
           greek,
           peshitta,
           old_syriac_cur: cur,
           old_syriac_sin: sin,
           arabic: arabicText,
-          arabicShared: isPreMarker && preTextAttached && !arabicText,
+          arabicShared: false,
           hogg: hv.text || "",
           kjv,
         });

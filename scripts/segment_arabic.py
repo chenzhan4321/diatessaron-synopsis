@@ -174,12 +174,37 @@ def main():
 
     # Pass 3: using the chosen markers, split text into sections
     chosen_set = {(c[0], c[2]) for c in best_sequence}  # (page, start_pos)
+
+    # Pre-pass: identify the page of Section 1's first marker. Any pages
+    # with HIGHER page numbers (earlier in Arabic RTL reading order) contain
+    # the book's opening prelude (doxology + John 1:1–8) which belongs to
+    # Section 1 but was printed BEFORE the formal "الاصحاح الاول" header.
+    section1_marker_page = None
+    for c in best_sequence:
+        if c[1] == 1:  # section num
+            section1_marker_page = c[0]
+            break
+
+    prelude_parts = []
+    prelude_pages = set()
+    if section1_marker_page is not None:
+        for p in sorted(pages.keys(), reverse=True):
+            if p > section1_marker_page:
+                text = pages[p].strip()
+                # Skip pure boilerplate (e.g. page numbers only)
+                if text and len(text) > 20:
+                    prelude_parts.append(text)
+                    prelude_pages.add(p)
+
     sections = {}  # section_num -> {"text_parts": [], "pages": set}
     current_section = None
     current_text_parts = []
     current_pages = set()
 
     for p in sorted(pages.keys(), reverse=True):
+        if p in prelude_pages:
+            # already absorbed into Section 1 prelude, skip
+            continue
         text = pages[p]
         markers = find_section_markers(text)
         # Filter to only chosen markers
@@ -221,6 +246,13 @@ def main():
             sections[current_section] = {"text_parts": [], "pages": set()}
         sections[current_section]["text_parts"].extend(current_text_parts)
         sections[current_section]["pages"].update(current_pages)
+
+    # Prepend the opening prelude to Section 1 (if any)
+    if prelude_parts and 1 in sections:
+        sections[1]["text_parts"] = prelude_parts + sections[1]["text_parts"]
+        sections[1]["pages"].update(prelude_pages)
+    elif prelude_parts:
+        sections[1] = {"text_parts": prelude_parts, "pages": prelude_pages}
 
     # Finalize
     final = {}

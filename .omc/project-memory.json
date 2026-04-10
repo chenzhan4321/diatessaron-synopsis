@@ -90,6 +90,18 @@
   },
   "hotPaths": [
     {
+      "path": "docs/js/app.js",
+      "accessCount": 10,
+      "lastAccessed": 1775809172892,
+      "type": "file"
+    },
+    {
+      "path": "scripts/segment_arabic.py",
+      "accessCount": 4,
+      "lastAccessed": 1775808702593,
+      "type": "file"
+    },
+    {
       "path": "web/css/style.css",
       "accessCount": 3,
       "lastAccessed": 1775797743888,
@@ -102,10 +114,10 @@
       "type": "file"
     },
     {
-      "path": "docs/js/app.js",
+      "path": "docs/css/style.css",
       "accessCount": 3,
-      "lastAccessed": 1775802209958,
-      "type": "file"
+      "lastAccessed": 1775809060426,
+      "type": "directory"
     },
     {
       "path": "",

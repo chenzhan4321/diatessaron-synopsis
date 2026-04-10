@@ -754,7 +754,7 @@ body::before {
   display: contents;
 }
 
-/* Column header cells */
+/* Column header cells — non-sticky to avoid floating over tall rows. */
 .sevenlang-table .col-head {
   font-family: var(--font-display);
   font-variant: small-caps;
@@ -763,11 +763,8 @@ body::before {
   color: var(--accent);
   background: var(--bg-card);
   padding: 0.65rem 0.75rem;
-  border-bottom: 1px solid var(--bg-rule);
+  border-bottom: 2px solid var(--accent-soft);
   letter-spacing: 0.06em;
-  position: sticky;
-  top: 9rem;
-  z-index: 5;
 }
 .sevenlang-table .col-head em {
   font-family: var(--font-body);
