@@ -108,6 +108,12 @@
       "type": "directory"
     },
     {
+      "path": "changelog.md",
+      "accessCount": 2,
+      "lastAccessed": 1775798673339,
+      "type": "file"
+    },
+    {
       "path": "web/js/app.js",
       "accessCount": 1,
       "lastAccessed": 1775797133794,
