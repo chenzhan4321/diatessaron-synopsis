@@ -1,0 +1,53 @@
+{
+  "gospels": {
+    "Matthew": {
+      "chapters": 28,
+      "verses": 1071,
+      "versions": {
+        "greek": 1068,
+        "peshitta": 1071,
+        "old_syriac_cur": 482,
+        "old_syriac_sin": 797,
+        "kjv": 1071
+      }
+    },
+    "Mark": {
+      "chapters": 17,
+      "verses": 679,
+      "versions": {
+        "greek": 673,
+        "peshitta": 678,
+        "kjv": 678,
+        "old_syriac_sin": 504
+      }
+    },
+    "Luke": {
+      "chapters": 25,
+      "verses": 1152,
+      "versions": {
+        "greek": 1149,
+        "peshitta": 1151,
+        "old_syriac_sin": 998,
+        "kjv": 1151,
+        "old_syriac_cur": 718
+      }
+    },
+    "John": {
+      "chapters": 22,
+      "verses": 880,
+      "versions": {
+        "greek": 866,
+        "peshitta": 879,
+        "old_syriac_cur": 283,
+        "kjv": 879,
+        "old_syriac_sin": 690
+      }
+    }
+  },
+  "diatessaron": {
+    "total_sections": 55,
+    "with_arabic": 44,
+    "with_hogg": 55,
+    "with_hill": 55
+  }
+}

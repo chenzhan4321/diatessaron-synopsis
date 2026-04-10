@@ -1,0 +1,30 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Data directories (too large for git; regenerated from scripts)
+data/diatessaron_arabic_ocr/ciasca_pages/
+data/diatessaron_arabic_ocr/results/ciasca_qari/
+data/diatessaron_arabic_ocr/results/ciasca_kraken/
+data/diatessaron_arabic_ocr/results/ciasca_tesseract/
+data/diatessaron_arabic_ocr/*.jpg
+data/diatessaron_arabic_ocr/results/*.json
+data/diatessaron_arabic_ocr/results/*.txt
+data/web_screenshots/
+
+# Downloaded models (huge)
+models/
+
+# PDFs (source material, not redistributable)
+data/diatessaron_arabic_ocr/*.pdf
+data/diatessaron_hill/hill_1894_raw_ocr.txt
+
+# macOS
+.DS_Store

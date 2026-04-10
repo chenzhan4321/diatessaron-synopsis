@@ -1,0 +1,19 @@
+Subject: Request for Access to Arabic Diatessaron Project (ADP) TEI XML Data
+
+Dear Professor Lancioni,
+
+I hope this message finds you well. My name is Zhan Chen, and I am a researcher working at the intersection of mathematics, linguistics, and history, with a current focus on Digital Humanities.
+
+I am writing to you with great admiration for the Arabic Diatessaron Project (ADP) that you and Dr. Joosse have developed. I read your 2016 paper in JRMDC, "The Arabic Diatessaron Project: Digitalizing, Encoding, Lemmatization," and found the approach to digitizing and encoding Ibn al-Tayyib's commentary both methodologically rigorous and deeply inspiring.
+
+I am currently undertaking a research project that applies computational phylogenetics and NLP techniques to analyze the textual evolution of the Syriac gospel tradition -- specifically, the relationship between Tatian's Diatessaron and the Old Syriac Gospels (the Curetonian and Sinaiticus manuscripts). My working corpus already includes the Old Syriac texts from the Comprehensive Aramaic Lexicon, the Peshitta New Testament, the Greek New Testament (SBLGNT), and Hogg's English translation of the Arabic Diatessaron. However, access to a properly encoded Arabic text would be invaluable for grounding the computational analysis in the Arabic witness itself, rather than relying solely on English renderings.
+
+I noticed that the diatessaron.org website appears to be offline. I was wondering whether it might be possible to obtain access to the TEI XML encoded text, or any other digitized Arabic Diatessaron data that the ADP has produced. Even a partial dataset or a working subset would be of tremendous value to this research.
+
+I would, of course, fully cite and acknowledge the ADP and your team's work in any publications or outputs that result from this project. I would also be happy to share my findings with you, as the computational analysis may yield results of mutual interest regarding textual transmission patterns.
+
+Thank you very much for considering this request. I understand that data-sharing decisions involve many considerations, and I am grateful for any guidance you can offer -- whether that means direct access, alternative sources, or simply advice on the current status of the project.
+
+With warm regards,
+
+Zhan Chen

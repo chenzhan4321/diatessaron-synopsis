@@ -1,0 +1,7 @@
+[2026-04-10] v0.5.0: COMPLETE Arabic Diatessaron digitization! All 210 pages (p.133-342) of Ciasca 1888 Arabic text OCR'd and corrected. Pipeline: QARI-OCR (Forge RTX 3060) + Tesseract + Claude multimodal correction via parallel subagents. Output: data/diatessaron_arabic/ciasca_1888_arabic_full.txt (391KB, 1928 lines). All core corpora now available: Arabic Diatessaron, Old Syriac (CAL), Peshitta NT (ETCBC), Greek NT (SBLGNT), Hogg English translation, Hill/Ciasca mapping tables.
+
+[2026-04-10] v0.4.0: Manually corrected and merged OCR for Ciasca 1888 Arabic Diatessaron pages 142-186 (45 pages). Cross-referenced QARI and Tesseract OCR against page images; fixed letter confusions and hallucinations; preserved verse numbers, gospel refs, section markers (الاصحاح), and ※ symbols.
+
+[2026-04-09] v0.3.0: Extracted Ciasca 1888 ORDO DIATESSARI mapping table (PDF pp.122-129) via Tesseract OCR; parsed 54/55 chapters with ~955 gospel verse references. Tested Arabic OCR on Ciasca pp.133-136: Tesseract achieves 84% Arabic character recognition with PSM 6; key religious vocabulary detected across all pages.
+
+[2026-04-09] v0.2.0: Arabic OCR research and testing for Marmardji 1935 Diatessaron edition. Tested Tesseract, EasyOCR, Kraken on sample pages. Tesseract achieves ~64% exact word recognition on Arabic footnotes; other tools perform worse. Full report in data/diatessaron_arabic_ocr/results/ocr_quality_report.md.

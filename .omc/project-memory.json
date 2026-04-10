@@ -1,0 +1,124 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775797006490,
+  "projectRoot": "/Users/zhanchen/Library/CloudStorage/Dropbox/Projects/test.tatian",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "pytest",
+    "lintCommand": "ruff check",
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "scripts"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 1,
+      "lastAccessed": 1775797006485,
+      "keyFiles": []
+    },
+    "models": {
+      "path": "models",
+      "purpose": "Data models",
+      "fileCount": 0,
+      "lastAccessed": 1775797006486,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 20,
+      "lastAccessed": 1775797006486,
+      "keyFiles": [
+        "build_web_data.py",
+        "export_greek_nt.py",
+        "export_peshitta_nt.py",
+        "extract_ciasca_pages.py",
+        "fetch_cal_old_syriac.py"
+      ]
+    },
+    "web": {
+      "path": "web",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775797006486,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "web/data": {
+      "path": "web/data",
+      "purpose": "Data files",
+      "fileCount": 3,
+      "lastAccessed": 1775797006486,
+      "keyFiles": [
+        "corpus_stats.json",
+        "diatessaron.json",
+        "gospels.json"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "web/css/style.css",
+      "accessCount": 3,
+      "lastAccessed": 1775797743888,
+      "type": "file"
+    },
+    {
+      "path": "web/index.html",
+      "accessCount": 3,
+      "lastAccessed": 1775797777285,
+      "type": "file"
+    },
+    {
+      "path": "web/js/app.js",
+      "accessCount": 1,
+      "lastAccessed": 1775797133794,
+      "type": "file"
+    },
+    {
+      "path": "data/web_screenshots/sevenlang_s1_all.png",
+      "accessCount": 1,
+      "lastAccessed": 1775797422051,
+      "type": "file"
+    },
+    {
+      "path": "data/web_screenshots/sevenlang_s1_toggled.png",
+      "accessCount": 1,
+      "lastAccessed": 1775797451068,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

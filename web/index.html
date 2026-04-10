@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diatessaron Synopsis · Tatian · Ibn al-Ṭayyib · Old Syriac</title>
+
+  <!-- Brill-inspired scholarly typography -->
+  <!-- EB Garamond for Latin/English body text, Cormorant for headers -->
+  <!-- Noto Serif for fallback, Noto Sans Syriac Estrangela for Syriac,
+       Amiri for Arabic, GFS Neohellenic for polytonic Greek -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Sans+Syriac:wght@400;700&family=GFS+Neohellenic:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- app.js must be loaded BEFORE Alpine so diatessaronApp() is defined
+       in the global scope when Alpine scans x-data directives. -->
+  <script defer src="js/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+</head>
+
+<body x-data="diatessaronApp()" x-init="init()">
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="title-block">
+        <h1 class="site-title">Diatessaron Synopsis</h1>
+        <p class="site-subtitle">
+          A Computational Edition of Tatian's Gospel Harmony and the Old Syriac Gospels
+        </p>
+      </div>
+      <nav class="site-nav">
+        <a href="#/home" :class="{active: route==='home'}">Home</a>
+        <a href="#/parallel" :class="{active: route==='parallel'}">Parallel View</a>
+        <a href="#/diatessaron" :class="{active: route==='diatessaron'}">Diatessaron</a>
+        <a href="#/about" :class="{active: route==='about'}">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main">
+
+    <!-- ========== HOME ========== -->
+    <section class="page home" x-show="route==='home'" x-cloak>
+      <div class="hero">
+        <h2 class="hero-title">A Digital Synopsis of the Gospel Harmony Tradition</h2>
+        <p class="hero-lede">
+          Compare Tatian's <i>Diatessaron</i> (2nd century, via Ciasca's 1888 edition of
+          the Arabic recension by Ibn al-Ṭayyib and Hope W. Hogg's English translation)
+          alongside the Old Syriac Gospels (Curetonian &amp; Sinaiticus), the Peshitta,
+          and the Greek New Testament — aligned by canonical verse and by Diatessaron section.
+        </p>
+      </div>
+
+      <div class="corpus-grid" x-show="stats">
+        <template x-for="(info, book) in stats?.gospels || {}" :key="book">
+          <div class="corpus-card">
+            <h3 x-text="book"></h3>
+            <div class="stat-row"><span>Chapters</span><b x-text="info.chapters"></b></div>
+            <div class="stat-row"><span>Verses</span><b x-text="info.verses"></b></div>
+            <hr/>
+            <div class="stat-row"><span>Greek (SBLGNT)</span><b x-text="info.versions?.greek || 0"></b></div>
+            <div class="stat-row"><span>Peshitta</span><b x-text="info.versions?.peshitta || 0"></b></div>
+            <div class="stat-row"><span>Old Syriac (Cur)</span><b x-text="info.versions?.old_syriac_cur || 0"></b></div>
+            <div class="stat-row"><span>Old Syriac (Sin)</span><b x-text="info.versions?.old_syriac_sin || 0"></b></div>
+          </div>
+        </template>
+        <div class="corpus-card">
+          <h3>Diatessaron</h3>
+          <div class="stat-row"><span>Sections</span><b>55</b></div>
+          <div class="stat-row"><span>With Arabic</span><b x-text="stats?.diatessaron?.with_arabic || 0"></b></div>
+          <div class="stat-row"><span>With Hogg English</span><b x-text="stats?.diatessaron?.with_hogg || 0"></b></div>
+          <div class="stat-row"><span>With Hill mapping</span><b x-text="stats?.diatessaron?.with_hill || 0"></b></div>
+          <hr/>
+          <div class="stat-row"><span>Arabic source</span><b class="note">Ciasca 1888</b></div>
+          <div class="stat-row"><span>English source</span><b class="note">Hogg (ANF IX)</b></div>
+        </div>
+      </div>
+
+      <div class="entry-points">
+        <a class="entry-card" href="#/parallel">
+          <h3>Parallel View</h3>
+          <p>Select a canonical gospel verse and see every witness side-by-side — Greek, Peshitta, Curetonian, Sinaiticus, and Diatessaron.</p>
+          <span class="entry-action">Open →</span>
+        </a>
+        <a class="entry-card" href="#/diatessaron">
+          <h3>Diatessaron Explorer</h3>
+          <p>Browse the 55 sections of the Arabic Diatessaron with synchronized English translation and gospel source mappings.</p>
+          <span class="entry-action">Open →</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ========== PARALLEL VIEW ========== -->
+    <section class="page parallel" x-show="route==='parallel'" x-cloak>
+      <div class="controls">
+        <label>
+          <span>Gospel</span>
+          <select x-model="sel.book" @change="sel.chapter=1; sel.verse=1">
+            <template x-for="book in books" :key="book">
+              <option :value="book" x-text="book"></option>
+            </template>
+          </select>
+        </label>
+        <label>
+          <span>Chapter</span>
+          <select x-model.number="sel.chapter" @change="sel.verse=1">
+            <template x-for="ch in chaptersOf(sel.book)" :key="ch">
+              <option :value="ch" x-text="ch"></option>
+            </template>
+          </select>
+        </label>
+        <label>
+          <span>Verse</span>
+          <select x-model.number="sel.verse">
+            <template x-for="v in versesOf(sel.book, sel.chapter)" :key="v">
+              <option :value="v" x-text="v"></option>
+            </template>
+          </select>
+        </label>
+        <button class="btn-prev" @click="prevVerse()">◀ Prev</button>
+        <button class="btn-next" @click="nextVerse()">Next ▶</button>
+      </div>
+
+      <div class="verse-header">
+        <h2>
+          <span x-text="sel.book"></span>
+          <span x-text="sel.chapter"></span>:<span x-text="sel.verse"></span>
+        </h2>
+      </div>
+
+      <div class="parallel-grid" x-show="currentVerse()">
+        <!-- Greek -->
+        <div class="version-card" x-show="currentVerse()?.greek">
+          <div class="version-label">
+            <span class="version-name">Greek</span>
+            <span class="version-source">SBLGNT</span>
+          </div>
+          <p class="verse-text grk" x-text="currentVerse()?.greek"></p>
+          <p class="verse-text grk lemma" x-show="currentVerse()?.greek_lemma"
+             x-text="currentVerse()?.greek_lemma"></p>
+        </div>
+
+        <!-- Peshitta -->
+        <div class="version-card" x-show="currentVerse()?.peshitta">
+          <div class="version-label">
+            <span class="version-name">Peshitta</span>
+            <span class="version-source">ETCBC / Syriac NT</span>
+          </div>
+          <p class="verse-text syr" dir="rtl" x-text="currentVerse()?.peshitta"></p>
+          <p class="verse-text syr-latin" x-show="currentVerse()?.peshitta_translit"
+             x-text="currentVerse()?.peshitta_translit"></p>
+        </div>
+
+        <!-- Old Syriac Curetonian -->
+        <div class="version-card" x-show="currentVerse()?.old_syriac_cur_syr || currentVerse()?.old_syriac_cur">
+          <div class="version-label">
+            <span class="version-name">Old Syriac</span>
+            <span class="version-source">Curetonian (SyrC)</span>
+          </div>
+          <p class="verse-text syr" dir="rtl" x-show="currentVerse()?.old_syriac_cur_syr"
+             x-text="currentVerse()?.old_syriac_cur_syr"></p>
+          <p class="verse-text syr-latin" x-text="currentVerse()?.old_syriac_cur"></p>
+        </div>
+
+        <!-- Old Syriac Sinaiticus -->
+        <div class="version-card" x-show="currentVerse()?.old_syriac_sin_syr || currentVerse()?.old_syriac_sin">
+          <div class="version-label">
+            <span class="version-name">Old Syriac</span>
+            <span class="version-source">Sinaiticus (SyrS)</span>
+          </div>
+          <p class="verse-text syr" dir="rtl" x-show="currentVerse()?.old_syriac_sin_syr"
+             x-text="currentVerse()?.old_syriac_sin_syr"></p>
+          <p class="verse-text syr-latin" x-text="currentVerse()?.old_syriac_sin"></p>
+        </div>
+
+        <!-- Diatessaron sections containing this verse -->
+        <div class="version-card diatessaron-link" x-show="diatessaronSectionsFor(sel.book, sel.chapter, sel.verse).length > 0">
+          <div class="version-label">
+            <span class="version-name">Diatessaron</span>
+            <span class="version-source">sections containing this verse</span>
+          </div>
+          <div class="dia-sections">
+            <template x-for="s in diatessaronSectionsFor(sel.book, sel.chapter, sel.verse)" :key="s">
+              <button class="dia-section-link" @click="route='diatessaron'; selSection=s"
+                      x-text="'Section ' + romanNumeral(s) + ' (' + s + ')'"></button>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <p class="no-data" x-show="!currentVerse()">
+        This verse has no data in the loaded corpora.
+      </p>
+    </section>
+
+    <!-- ========== DIATESSARON EXPLORER ========== -->
+    <section class="page diatessaron" x-show="route==='diatessaron'" x-cloak>
+      <aside class="section-list">
+        <h3>Sections</h3>
+        <template x-for="num in sectionNumbers" :key="num">
+          <button class="section-btn" :class="{active: selSection==num}" @click="selSection=num">
+            <span class="roman" x-text="romanNumeral(num)"></span>
+            <span class="arab" x-text="num"></span>
+          </button>
+        </template>
+      </aside>
+
+      <div class="section-content" x-show="currentSection()">
+        <div class="section-header">
+          <h2>
+            Section <span x-text="romanNumeral(selSection)"></span>
+            <span class="arab-label">※ الاصحاح <span x-text="selSection"></span> ※</span>
+          </h2>
+        </div>
+
+        <div class="section-tabs">
+          <button :class="{active: tab==='fourlang'}" @click="tab='fourlang'">Four Languages</button>
+          <button :class="{active: tab==='arabic'}" @click="tab='arabic'">Arabic</button>
+          <button :class="{active: tab==='english'}" @click="tab='english'">English (Hogg)</button>
+          <button :class="{active: tab==='refs'}" @click="tab='refs'">Gospel Refs</button>
+          <button :class="{active: tab==='both'}" @click="tab='both'">Ar + En</button>
+        </div>
+
+        <!-- Seven Languages: assembled via Hogg verses + Hill mapping -->
+        <div class="tab-panel sevenlang" x-show="tab==='fourlang'">
+          <p class="sevenlang-intro">
+            Each row corresponds to one Hogg sub-verse, aligned against the canonical
+            gospel source identified by Hogg's marginal reference. Greek, Peshitta,
+            Old Syriac, and KJV are looked up from that canonical verse; Arabic is
+            extracted from the section body by verse marker (١)(٢); Hogg's English is
+            a translation of the Arabic itself — compare it with KJV (from Greek) to
+            see the translational distance.
+          </p>
+
+          <!-- Language visibility toggles -->
+          <div class="lang-toggles">
+            <span class="toggle-label">Show columns:</span>
+            <label><input type="checkbox" x-model="langVisible.greek"> <span>Greek</span></label>
+            <label><input type="checkbox" x-model="langVisible.peshitta"> <span>Peshitta</span></label>
+            <label><input type="checkbox" x-model="langVisible.cur"> <span>SyrC</span></label>
+            <label><input type="checkbox" x-model="langVisible.sin"> <span>SyrS</span></label>
+            <label><input type="checkbox" x-model="langVisible.arabic"> <span>Arabic</span></label>
+            <label><input type="checkbox" x-model="langVisible.hogg"> <span>Hogg</span></label>
+            <label><input type="checkbox" x-model="langVisible.kjv"> <span>KJV</span></label>
+          </div>
+
+          <!-- Column grid: 7 data columns + 1 ref column, each toggleable -->
+          <div class="sevenlang-table"
+               :style="'grid-template-columns: minmax(90px, 0.6fr) '
+                       + (langVisible.greek    ? 'minmax(180px,1fr) ' : '')
+                       + (langVisible.peshitta ? 'minmax(180px,1fr) ' : '')
+                       + (langVisible.cur      ? 'minmax(180px,1fr) ' : '')
+                       + (langVisible.sin      ? 'minmax(180px,1fr) ' : '')
+                       + (langVisible.arabic   ? 'minmax(180px,1fr) ' : '')
+                       + (langVisible.hogg     ? 'minmax(220px,1.2fr) ' : '')
+                       + (langVisible.kjv      ? 'minmax(220px,1.2fr) ' : '')">
+
+            <!-- Header row -->
+            <div class="col-head col-ref">Ref</div>
+            <div class="col-head" x-show="langVisible.greek">Greek</div>
+            <div class="col-head" x-show="langVisible.peshitta">Peshitta</div>
+            <div class="col-head" x-show="langVisible.cur">Old Syriac <em>Cur</em></div>
+            <div class="col-head" x-show="langVisible.sin">Old Syriac <em>Sin</em></div>
+            <div class="col-head" x-show="langVisible.arabic">Arabic <em>(Ciasca)</em></div>
+            <div class="col-head" x-show="langVisible.hogg">Hogg <em>(← Arabic)</em></div>
+            <div class="col-head" x-show="langVisible.kjv">KJV <em>(← Greek)</em></div>
+
+            <!-- Data rows. Each row is a single wrapper div with
+                 `display: contents` so its children become direct grid
+                 cells (Alpine x-for requires one root element). -->
+            <template x-for="row in sevenLangRows()" :key="row.dv + row.ref">
+              <div class="row-wrap">
+                <div class="col-ref">
+                  <span class="dv-badge" x-text="'v.' + row.dv"></span>
+                  <template x-if="row.parsedRef">
+                    <button class="canon-link"
+                            @click="jumpToVerse(row.parsedRef.book, row.parsedRef.ch, row.parsedRef.v)"
+                            x-text="row.parsedRef.book.slice(0,3) + ' ' + row.parsedRef.ch + ':' + row.parsedRef.v"></button>
+                  </template>
+                </div>
+                <div class="col-cell" :class="{empty: !row.greek}" x-show="langVisible.greek">
+                  <p class="verse-text grk" x-text="row.greek || '—'"></p>
+                </div>
+                <div class="col-cell" :class="{empty: !row.peshitta}" x-show="langVisible.peshitta">
+                  <p class="verse-text syr" dir="rtl" x-text="row.peshitta || '—'"></p>
+                </div>
+                <div class="col-cell" :class="{empty: !row.old_syriac_cur}" x-show="langVisible.cur">
+                  <p class="verse-text syr" dir="rtl" x-text="row.old_syriac_cur || '—'"></p>
+                </div>
+                <div class="col-cell" :class="{empty: !row.old_syriac_sin}" x-show="langVisible.sin">
+                  <p class="verse-text syr" dir="rtl" x-text="row.old_syriac_sin || '—'"></p>
+                </div>
+                <div class="col-cell" :class="{empty: !row.arabic}" x-show="langVisible.arabic">
+                  <p class="verse-text arb" dir="rtl" x-text="row.arabic || '—'"></p>
+                </div>
+                <div class="col-cell" :class="{empty: !row.hogg}" x-show="langVisible.hogg">
+                  <p class="verse-text eng" x-text="row.hogg || '—'"></p>
+                </div>
+                <div class="col-cell" :class="{empty: !row.kjv}" x-show="langVisible.kjv">
+                  <p class="verse-text eng" x-text="row.kjv || '—'"></p>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <p class="no-data" x-show="!sevenLangRows().length">
+            No Hogg verses available for this section.
+          </p>
+        </div>
+
+        <!-- Arabic -->
+        <div class="tab-panel" x-show="tab==='arabic'">
+          <p class="verse-text arb" dir="rtl" x-show="currentSection()?.arabic"
+             x-text="currentSection()?.arabic"></p>
+          <p class="no-data" x-show="!currentSection()?.arabic">
+            No Arabic text available for this section (may be missing from OCR).
+          </p>
+          <p class="meta" x-show="currentSection()?.arabic_pages"
+             x-text="'Source: Ciasca 1888, pages ' + (currentSection()?.arabic_pages||[]).join(', ')"></p>
+        </div>
+
+        <!-- English -->
+        <div class="tab-panel" x-show="tab==='english'">
+          <template x-for="v in currentSection()?.hogg_verses || []" :key="v.v">
+            <p class="verse-text eng">
+              <sup class="verse-num" x-text="v.v"></sup>
+              <span x-text="v.text"></span>
+            </p>
+          </template>
+          <p class="no-data" x-show="!currentSection()?.hogg_verses?.length">
+            No Hogg English translation available.
+          </p>
+        </div>
+
+        <!-- Gospel Refs -->
+        <div class="tab-panel" x-show="tab==='refs'">
+          <div class="refs-columns">
+            <div>
+              <h4>Hill (1894) — verse-level mapping</h4>
+              <div class="ref-list">
+                <template x-for="ref in currentSection()?.hill_refs || []" :key="ref.dv+ref.book+ref.ch+ref.v">
+                  <div class="ref-item">
+                    <button class="ref-link" @click="jumpToVerse(ref.book, parseInt(ref.ch), parseInt(ref.v))">
+                      <span class="dv" x-text="ref.dv"></span>
+                      <span class="arrow">→</span>
+                      <span class="canon" x-text="ref.book + ' ' + ref.ch + ':' + ref.v"></span>
+                    </button>
+                    <span class="snippet" x-text="ref.text"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div>
+              <h4>Ciasca (1888) — section-level <i>ordo</i></h4>
+              <div class="ref-list">
+                <template x-for="(ref, i) in currentSection()?.ciasca_refs || []" :key="i">
+                  <div class="ref-item ciasca">
+                    <span class="canon" x-text="(ref.gospel||'') + ' ' + (ref.reference||'')"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parallel: Arabic + English side by side -->
+        <div class="tab-panel parallel-section" x-show="tab==='both'">
+          <div class="dual-column">
+            <div class="col-arabic">
+              <h4>Arabic (Ciasca 1888)</h4>
+              <p class="verse-text arb" dir="rtl" x-text="currentSection()?.arabic || '(no Arabic text)'"></p>
+            </div>
+            <div class="col-english">
+              <h4>English (Hogg 1894)</h4>
+              <template x-for="v in currentSection()?.hogg_verses || []" :key="v.v">
+                <p class="verse-text eng">
+                  <sup class="verse-num" x-text="v.v"></sup>
+                  <span x-text="v.text"></span>
+                </p>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ABOUT ========== -->
+    <section class="page about" x-show="route==='about'" x-cloak>
+      <div class="prose">
+        <h2>About this Edition</h2>
+        <p>
+          This synopsis integrates six corpora relevant to the study of Tatian's
+          <i>Diatessaron</i> and the Old Syriac Gospels, presented as a unified
+          digital edition for the purpose of computational textual analysis.
+        </p>
+
+        <h3>Corpora</h3>
+        <ul>
+          <li><b>Greek New Testament</b> — SBL Greek New Testament (SBLGNT), via MorphGNT.</li>
+          <li><b>Peshitta New Testament</b> — ETCBC's Text-Fabric dataset of the Syriac New Testament.</li>
+          <li><b>Old Syriac Gospels</b> — Curetonian (SyrC) and Sinaiticus (SyrS) transcribed
+              by the Comprehensive Aramaic Lexicon (cal.huc.edu), retrieved in both CAL
+              romanization and Syriac Unicode.</li>
+          <li><b>Diatessaron (Arabic)</b> — Ciasca's 1888 edition of the Arabic recension
+              attributed to Abū 'l-Faraj ʿAbdallāh Ibn al-Ṭayyib, digitized via a three-way
+              OCR pipeline (QARI-OCR, Tesseract, Kraken) with multimodal correction.</li>
+          <li><b>Diatessaron (English)</b> — Hope W. Hogg's translation in <i>Ante-Nicene
+              Fathers</i>, vol. IX, scraped from Wikisource.</li>
+          <li><b>Source mappings</b> — Hill's 1894 verse-level mapping of the Diatessaron
+              to the four canonical gospels (2,408 entries) and Ciasca's own <i>Ordo
+              Diatessari in versione Arabica</i> (955 entries).</li>
+        </ul>
+
+        <h3>Scope &amp; caveats</h3>
+        <p>
+          This edition is a research scaffold, not a critical edition. OCR errors persist
+          in the Arabic text (particularly around decorative borders); section markers
+          were not always recoverable (sections 5–8, 11, 25, 30, 34–35, 46, 53 are absorbed
+          into adjacent sections). The Old Syriac coverage reflects extant manuscript
+          witnesses — Curetonian lacks Mark almost entirely and has large gaps elsewhere.
+        </p>
+
+        <h3>Method</h3>
+        <p>
+          The Arabic text was produced through a pipeline combining:
+        </p>
+        <ol>
+          <li>PDF page extraction at 300 DPI.</li>
+          <li>Three parallel OCR passes: QARI-OCR (a Qwen2-VL-based vision-language model
+              fine-tuned for Arabic, running on a remote GPU), Tesseract 5 with the
+              <tt>ara_best</tt> model, and Kraken with OpenITI's classical Arabic
+              print models.</li>
+          <li>Page-level multimodal correction: each of ~210 pages was cross-referenced
+              against the original image and the three OCR candidates to produce a
+              consolidated Arabic text.</li>
+          <li>Section segmentation using pattern matching on الاصحاح markers with a
+              longest-increasing-subsequence constraint to reject spurious matches.</li>
+        </ol>
+
+        <h3>Licensing</h3>
+        <p>
+          All source texts are in the public domain (Ciasca 1888, Hogg 1894, Burkitt 1904,
+          Lewis 1910). Derived data released under CC0. Code released under MIT.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>Diatessaron Synopsis</span>
+      <span>·</span>
+      <span>Research edition</span>
+      <span>·</span>
+      <span x-text="new Date().getFullYear()"></span>
+    </div>
+  </footer>
+
+</body>
+</html>
