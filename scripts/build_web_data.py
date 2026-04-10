@@ -16,8 +16,13 @@ This is the static data layer consumed by the web app
 import csv
 import json
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
+
+# Local import: CAL→Syriac Unicode transliterator
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cal_to_syriac import transliterate as cal_to_syriac  # noqa: E402
 
 PROJECT = Path(__file__).resolve().parent.parent
 DATA = PROJECT / "data"
@@ -151,8 +156,14 @@ def build_gospels():
                 if v is not None:
                     witness = row["witness"]  # "Curetonian" or "Sinaiticus"
                     key = "old_syriac_cur" if witness == "Curetonian" else "old_syriac_sin"
-                    v[key] = row.get("cal_text", "")
-                    v[key + "_syr"] = row.get("syriac_text", "")
+                    cal_text = row.get("cal_text", "")
+                    # IMPORTANT: the stored `syriac_text` field from the CAL
+                    # scrape is misaligned (Syriac-page verse numbering
+                    # didn't match Roman-page verse numbering). We instead
+                    # transliterate the CAL romanization — which IS correctly
+                    # aligned — into Syriac Unicode deterministically.
+                    v[key] = cal_text                   # keep CAL romanization (scholar-friendly)
+                    v[key + "_syr"] = cal_to_syriac(cal_text)  # correct Syriac script
                     count += 1
             print(f"  {name}: {count} verses")
 

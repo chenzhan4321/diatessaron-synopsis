@@ -195,20 +195,21 @@ function diatessaronApp() {
       return ch.verses.find((v) => v.v === verse) || null;
     },
 
-    // Parse a Diatessaron-Arabic section's body text into a map:
-    //   Arabic-numeral "verse" -> text chunk
-    // The Arabic text uses Eastern Arabic digits (١٢٣...) in parentheses,
-    // e.g. "(١) وقال يسوع ..." to mark verse boundaries.
+    // Parse a Diatessaron-Arabic section's body text into per-verse chunks.
     //
-    // Returns a Map keyed by ASCII digit string ("1", "2", ...).
+    // The Arabic uses Eastern Arabic digits (١٢٣...) in parentheses to mark
+    // verse boundaries, e.g. "(١) وقال يسوع". Many sections start with
+    // un-numbered opening prose BEFORE the first marker — we capture that
+    // as `preText` so it can be attached to the earliest Hogg verses.
+    //
+    // Returns an object with:
+    //   map:         Map from ASCII verse number ("1","2",...) → Arabic text
+    //   preText:     String of opening text before any marker (may be "")
+    //   firstMarker: Integer of first marker found (or null if none)
     parseArabicVerses(arabicText) {
-      const map = new Map();
-      if (!arabicText) return map;
-      // Convert Eastern Arabic digits to ASCII for matching
+      const result = { map: new Map(), preText: "", firstMarker: null };
+      if (!arabicText) return result;
       const EAST_TO_ASCII = {"٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9"};
-      // Regex matches "(X)" where X is one or more Eastern Arabic digits
-      // (possibly with a leading marker) — captured as the verse number.
-      // We split on these markers to get per-verse chunks.
       const markerRe = /[\(（]\s*([٠١٢٣٤٥٦٧٨٩]+)\s*[\)）]\.?/g;
       const matches = [];
       let m;
@@ -218,20 +219,21 @@ function diatessaronApp() {
         matches.push({ verseNum: ascii, start: m.index, end: m.index + m[0].length });
       }
       if (matches.length === 0) {
-        // No verse markers — return whole text under key "1"
-        map.set("1", arabicText.trim());
-        return map;
+        // No verse markers — everything is "pre-marker"
+        result.preText = arabicText.trim();
+        return result;
       }
-      // Text before first marker → belongs to verse 1 (or ignore as incipit)
-      // Iterate pairs
+      // Text before the first marker is un-numbered opening prose
+      result.preText = arabicText.slice(0, matches[0].start).trim();
+      result.firstMarker = parseInt(matches[0].verseNum);
+
       for (let i = 0; i < matches.length; i++) {
         const cur = matches[i];
         const next = matches[i + 1];
         const chunk = arabicText.slice(cur.end, next ? next.start : undefined).trim();
-        // Prepend prior existing text (for the first chunk before verse 1, ignore)
-        map.set(cur.verseNum, chunk);
+        result.map.set(cur.verseNum, chunk);
       }
-      return map;
+      return result;
     },
 
     // For the CURRENT Diatessaron section, build a row-per-verse table of
@@ -250,15 +252,67 @@ function diatessaronApp() {
     sevenLangRows() {
       const sec = this.currentSection();
       if (!sec || !sec.hogg_verses || !this.gospels) return [];
-      const arabicMap = this.parseArabicVerses(sec.arabic || "");
+      const arabic = this.parseArabicVerses(sec.arabic || "");
+
+      // Identify which Hogg verses come BEFORE the first Arabic marker.
+      // In Ciasca 1888 each section starts with un-numbered prose, then the
+      // first marker appears (often at (٦) for Section 1). Hogg numbers
+      // verses 1..N that together correspond to this opening chunk.
+      // We attach the entire pre-marker chunk to the FIRST such Hogg verse,
+      // and mark subsequent pre-marker Hogg verses with a reference so the
+      // user can see they share text.
+      const firstMarker = arabic.firstMarker;
+      let preTextAttached = false;
 
       const rows = [];
       for (const hv of sec.hogg_verses) {
         const verseKey = (hv.v || "").trim(); // e.g. "1" or "2,3"
-        const firstKey = verseKey.split(/[,\s\-–]/)[0]; // first part for Arabic lookup
+        // Hogg verse keys can be "1", "2,3", "4-6" etc.
+        // Extract ALL numeric parts for Arabic lookup.
+        const verseNums = verseKey
+          .split(/[,\s]/)
+          .map((s) => s.trim())
+          .filter((s) => /^\d+/.test(s))
+          .flatMap((s) => {
+            // handle range "4-6" → [4, 5, 6]
+            const range = s.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+            if (range) {
+              const a = parseInt(range[1]), b = parseInt(range[2]);
+              const out = [];
+              for (let k = a; k <= b; k++) out.push(String(k));
+              return out;
+            }
+            return [s.replace(/[^\d]/g, "")];
+          })
+          .filter(Boolean);
+
+        // Determine if this Hogg verse is BEFORE the first Arabic marker.
+        // (i.e. its highest verse number is less than firstMarker)
+        const maxNum = verseNums.length ? Math.max(...verseNums.map((n) => parseInt(n))) : null;
+        const isPreMarker = firstMarker !== null && maxNum !== null && maxNum < firstMarker;
+
+        let arabicText = "";
+        if (isPreMarker) {
+          // All pre-marker Hogg verses share the opening chunk.
+          // Attach it to the first one and leave the rest empty (but
+          // show a note in the ref cell).
+          if (!preTextAttached) {
+            arabicText = arabic.preText;
+            preTextAttached = true;
+          } else {
+            arabicText = "";  // empty; user sees "—" and the note
+          }
+        } else {
+          // Try each verse number — concatenate if multiple exist.
+          const chunks = [];
+          for (const n of verseNums) {
+            const chunk = arabic.map.get(n);
+            if (chunk) chunks.push(chunk);
+          }
+          arabicText = chunks.join(" ");
+        }
 
         // Parse the first gospel ref to get canonical verse
-        // Hogg gospel_refs format: ["John i. 1", "Luke iii. 5"]
         const firstRef = (hv.refs && hv.refs[0]) || "";
         const parsed = this.parseGospelRef(firstRef);
 
@@ -282,7 +336,8 @@ function diatessaronApp() {
           peshitta,
           old_syriac_cur: cur,
           old_syriac_sin: sin,
-          arabic: arabicMap.get(firstKey) || "",
+          arabic: arabicText,
+          arabicShared: isPreMarker && preTextAttached && !arabicText,
           hogg: hv.text || "",
           kjv,
         });
